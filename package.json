@@ -15,7 +15,7 @@
         "react-dom": "^16.8.6",
         "react-router-dom": "^5.0.1",
         "styled-components": "^4.3.2",
-        "typeface-indie-flower": "0.0.72"
+        "typeface-audiowide": "0.0.72"
     },
     "devDependencies": {
         "@types/react": "^16.8.23",

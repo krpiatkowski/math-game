@@ -1,69 +1,33 @@
 import * as React from 'react'
-import styled, { keyframes } from 'styled-components'
 
-import { Column } from '../../Components/Column'
+import { Column } from '../../components/Column'
 
-const TopBar = styled.div`
-    width: 100%;
-    font-size: 2em;
-    height: 30px;
-    display: flex;
-    align-self: flex-start;
-    justify-content: flex-end;
-`
-
-const TimerContainer = styled.div`
-    position: relative;
-    width: 100px;
-`
-
-const ScoreContainer = styled.div`
-    width: 100px;
-`
-
-const scoreAnimation = keyframes`
-    0% {
-        top: 0px;
-        left: 0%;
-        opacity: 0;
-    }
-    25% {
-        top: -0.2em;
-        opacity: 1;
-    }
-    50% {
-        top: -0.2em;
-        opacity: 1;
-    }
-    100% {
-        top: 0px;
-        left: 100%;
-        opacity: 0;
-    }
-`
-
-const AnimationedScore = styled(ScoreContainer)`
-    position: absolute;
-    animation: ${scoreAnimation} 0.3s forwards ease-out;
-    color: green;
-    top: 0;
-`
-
-interface IProblem {
-    timeMax: number
-    timeStart: number
-    score?: number
-}
+import { Expression } from './expression'
+import { IProblem } from './problem'
+import { ProblemGenerator } from './problemGenerator'
+import {
+    AnimatedScoreContainer,
+    AnimationedScore,
+    AnswerInput,
+    EqualsContainer,
+    ExpressionContainer,
+    ProblemContainer,
+    ProblemScoreContainer,
+    ScoreContainer,
+    TopBar,
+} from './styled'
 
 interface IState {
     score: number
     problemScore?: number
     problem: IProblem
     animatedProblems: IProblem[]
+    answer: string
 }
 
 export class Game extends React.Component<{}, IState> {
     private timer: number
+    private problemGenerator = new ProblemGenerator()
 
     constructor(props: {}) {
         super(props)
@@ -71,34 +35,49 @@ export class Game extends React.Component<{}, IState> {
             score: 0,
             problem: null,
             animatedProblems: [],
+            answer: '',
         }
     }
 
     public render() {
         return (
             <Column align="top">
-                <TopBar>
-                    {this.state.problem && (
-                        <TimerContainer>
-                            {this.state.problemScore}
-                            {this.state.animatedProblems.map(p => (
-                                <AnimationedScore
-                                    key={p.timeStart}
-                                    onAnimationEnd={this.updateScore(p)}
-                                >
-                                    {p.score}
-                                </AnimationedScore>
-                            ))}
-                        </TimerContainer>
-                    )}
-                    <ScoreContainer>{this.state.score}</ScoreContainer>
-                </TopBar>
+                {this.state.problem && (
+                    <>
+                        <TopBar>
+                            <AnimatedScoreContainer>
+                                {this.state.animatedProblems.map(p => (
+                                    <AnimationedScore
+                                        key={p.timeStart}
+                                        onAnimationEnd={this.updateScore(p)}
+                                    >
+                                        {p.score}
+                                    </AnimationedScore>
+                                ))}
+                            </AnimatedScoreContainer>
+                            <ScoreContainer>{this.state.score}</ScoreContainer>
+                        </TopBar>
+                        <ProblemContainer>
+                            <ProblemScoreContainer>{this.state.problemScore}</ProblemScoreContainer>
+                            <ExpressionContainer>
+                                <Expression expression={this.state.problem.expression} />
+                            </ExpressionContainer>
+                            <EqualsContainer>=</EqualsContainer>
+                            <AnswerInput
+                                type="text"
+                                onChange={this.onAnswerChanged}
+                                value={this.state.answer}
+                                autoFocus={true}
+                            />
+                        </ProblemContainer>
+                    </>
+                )}
             </Column>
         )
     }
 
     public componentDidMount() {
-        this.nextProblem()
+        this.onAnswer()
 
         this.timer = window.setInterval(() => {
             this.setState(state => {
@@ -108,7 +87,11 @@ export class Game extends React.Component<{}, IState> {
                 return { problemScore: score > 0 ? score : 0 }
             })
         })
-        document.addEventListener('keydown', () => this.onAnswer())
+        document.addEventListener('keydown', event => {
+            if (event.keyCode === 13) {
+                this.onAnswer()
+            }
+        })
     }
 
     public componentWillUnmount() {
@@ -123,10 +106,6 @@ export class Game extends React.Component<{}, IState> {
     }
 
     private onAnswer() {
-        this.nextProblem()
-    }
-
-    private nextProblem() {
         let animatedProblems = this.state.animatedProblems
         if (this.state.problem) {
             this.state.problem.score = this.state.problemScore
@@ -134,8 +113,16 @@ export class Game extends React.Component<{}, IState> {
         }
 
         this.setState({
-            problem: { timeMax: 10000, timeStart: Date.now() },
+            problem: this.problemGenerator.next(),
             animatedProblems,
+            answer: '',
         })
+    }
+
+    private onAnswerChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const parsedInt = parseInt(event.target.value, 10)
+        if (Number.isInteger(parsedInt) || event.target.value === '') {
+            this.setState({ answer: event.target.value })
+        }
     }
 }

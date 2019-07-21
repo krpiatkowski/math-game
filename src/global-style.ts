@@ -1,10 +1,10 @@
 import 'normalize.css'
 import { createGlobalStyle } from 'styled-components'
-import 'typeface-indie-flower'
+import 'typeface-audiowide'
 
 export const GlobalStyle = createGlobalStyle`
     html {
-        font-family: "Indie Flower", serif;
+        font-family: "Audiowide", serif;
     }
     html, body, #index {
         width: 100%;
